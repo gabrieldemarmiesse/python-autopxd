@@ -400,7 +400,9 @@ def translate(code, hdrname, extra_cpp_args=[], whitelist=None):
 WHITELIST = []
 
 @click.command()
+@click.option('--include-dir', '-I', multiple=True, metavar='<dir>', help='Allow the C preprocessor to search for files in <dir>.')
 @click.argument('infile', type=click.File('r'), default=sys.stdin)
 @click.argument('outfile', type=click.File('w'), default=sys.stdout)
-def cli(infile, outfile):
-    outfile.write(translate(infile.read(), infile.name))
+def cli(infile, outfile, include_dir):
+    extra_cpp_args = [include_option for dir in include_dir for include_option in ('-I', dir)]
+    outfile.write(translate(infile.read(), infile.name, extra_cpp_args))
