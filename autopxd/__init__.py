@@ -139,13 +139,14 @@ class Type(PxdNode):
 
 
 class Block(PxdNode):
-    def __init__(self, name, fields, kind):
+    def __init__(self, name, fields, kind, statement='cdef'):
         self.name = name
         self.fields = fields
         self.kind = kind
+        self.statement = statement
 
     def lines(self):
-        rv = ['cdef {0} {1}:'.format(self.kind, self.name)]
+        rv = ['{0} {1} {2}:'.format(self.statement, self.kind, self.name)]
         for field in self.fields:
             for line in field.lines():
                 rv.append(self.indent + line)
@@ -153,14 +154,15 @@ class Block(PxdNode):
 
 
 class Enum(PxdNode):
-    def __init__(self, name, items):
+    def __init__(self, name, items, statement='cdef'):
         self.name = name
         self.items = items
+        self.statement = statement
 
     def lines(self):
         rv = []
         if self.name:
-            rv.append('cdef enum {0}:'.format(self.name))
+            rv.append('{0} enum {1}:'.format(self.statement, self.name))
         else:
             rv.append('cdef enum:')
         for item in self.items:
@@ -190,9 +192,14 @@ class AutoPxd(c_ast.NodeVisitor, PxdNode):
         self.append(' '.join(node.names))
 
     def visit_Block(self, node, kind):
+        type_decl = self.child_of(c_ast.TypeDecl, -2)
+        type_def = type_decl and self.child_of(c_ast.Typedef, -3)
         name = node.name
         if not name:
-            name = self.path_name(kind[0])
+            if type_def:
+                name = self.path_name()
+            else:
+                name = self.path_name(kind[0])
         if not node.decls:
             if self.child_of(c_ast.TypeDecl, -2):
                 # not a definition, must be a reference
@@ -200,26 +207,36 @@ class AutoPxd(c_ast.NodeVisitor, PxdNode):
             return
         fields = self.collect(node)
         # add the struct/union definition to the top level
-        self.decl_stack[0].append(Block(name, fields, kind))
-        if self.child_of(c_ast.TypeDecl, -2):
-            # inline struct/union, add a reference to whatever name it was
-            # defined on the top level
-            self.append(name)
+        if type_def and node.name is None:
+            self.decl_stack[0].append(Block(name, fields, kind, 'ctypedef'))
+        else:
+            self.decl_stack[0].append(Block(name, fields, kind, 'cdef'))
+            if type_decl:
+                # inline struct/union, add a reference to whatever name it was
+                # defined on the top level
+                self.append(name)
 
     def visit_Enum(self, node):
         items = []
         if node.values:
             for item in node.values.enumerators:
                 items.append(item.name)
-        name = node.name
         type_decl = self.child_of(c_ast.TypeDecl, -2)
-        if not name and type_decl:
-            name = self.path_name('e')
+        type_def = type_decl and self.child_of(c_ast.Typedef, -3)
+        name = node.name
+        if not name:
+            if type_def:
+                name = self.path_name()
+            elif type_def:
+                name = self.path_name('e')
         # add the enum definition to the top level
-        if len(items):
-            self.decl_stack[0].append(Enum(name, items))
-        if type_decl:
-            self.append(name)
+        if node.name is None and type_def and len(items):
+            self.decl_stack[0].append(Enum(name, items, 'ctypedef'))
+        else:
+            if len(items):
+                self.decl_stack[0].append(Enum(name, items, 'cdef'))
+            if type_decl:
+                self.append(name)
 
     def visit_Struct(self, node):
         return self.visit_Block(node, 'struct')
@@ -300,14 +317,17 @@ class AutoPxd(c_ast.NodeVisitor, PxdNode):
         assert self.decl_stack.pop() == decls
         return decls
 
-    def path_name(self, tag):
+    def path_name(self, tag = None):
         names = []
         for node in self.visit_stack[:-2]:
             if hasattr(node, 'declname') and node.declname:
                 names.append(node.declname)
             elif hasattr(node, 'name') and node.name:
                 names.append(node.name)
-        return '_{0}_{1}'.format('_'.join(names), tag)
+        if tag is None:
+            return '_'.join(names)
+        else:
+            return '_{0}_{1}'.format('_'.join(names), tag)
 
     def child_of(self, type, index=None):
         if index is None:

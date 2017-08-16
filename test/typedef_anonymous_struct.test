@@ -7,10 +7,8 @@ typedef struct {
 
 cdef extern from "typedef_anonymous_struct.test":
 
-    cdef struct _my_struct_t_s:
+    ctypedef struct my_struct_t:
         int s1
         int** s2
         char c1
         char* c2
-
-    ctypedef _my_struct_t_s my_struct_t
