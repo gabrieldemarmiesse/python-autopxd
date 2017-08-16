@@ -352,7 +352,7 @@ def translate(code, hdrname, extra_cpp_args=[], whitelist=None):
 WHITELIST = []
 
 @click.command()
-@click.argument('infile', type=click.File('rb'), default=sys.stdin)
-@click.argument('outfile', type=click.File('wb'), default=sys.stdout)
+@click.argument('infile', type=click.File('r'), default=sys.stdin)
+@click.argument('outfile', type=click.File('w'), default=sys.stdout)
 def cli(infile, outfile):
     outfile.write(translate(infile.read(), infile.name))
