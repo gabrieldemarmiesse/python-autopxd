@@ -13,9 +13,9 @@ cdef extern from "inline_proto_struct.test":
 
     ctypedef void (*_my_struct_my_func_2_ft)(my_struct* p)
 
-    ctypedef int (*_my_struct_my_func_3_ft)(char* a1, char** a2, char** a3[1][1])
+    ctypedef int (*_my_struct_my_func_3_ft)(char* a1, char** a2, char** a3[3][4])
 
-    ctypedef int*** (*_my_struct_my_func_4_ft)(char* a1, char** a2, char** a3[1][1])
+    ctypedef int*** (*_my_struct_my_func_4_ft)(char* a1, char** a2, char** a3[3][4])
 
     cdef struct my_struct:
         _my_struct_my_func_1_ft my_func_1

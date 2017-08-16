@@ -14,4 +14,4 @@ cdef extern from "union.test":
         int*** d
         char ac
         char* bc
-        char* cc[1]
+        char* cc[5]

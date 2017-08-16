@@ -104,12 +104,16 @@ class Ptr(IdentifierType):
 
 
 class Array(IdentifierType):
-    def __init__(self, node):
+    def __init__(self, node, dimensions=[1]):
         self.node = node
+        self.dimensions = dimensions
 
     @property
     def name(self):
-        return self.node.name + '[1]'
+        if self.dimensions:
+            return self.node.name + '[' + ']['.join([str(dim) for dim in self.dimensions]) + ']'
+        else:
+            return self.node.name
 
     @property
     def type_name(self):
@@ -161,6 +165,7 @@ class AutoPxd(c_ast.NodeVisitor, PxdNode):
         self.hdrname = hdrname
         self.decl_stack = [[]]
         self.visit_stack = []
+        self.dimension_stack = []
 
     def visit(self, node):
         self.visit_stack.append(node)
@@ -257,9 +262,16 @@ class AutoPxd(c_ast.NodeVisitor, PxdNode):
             self.append(Ptr(decls[0]))
 
     def visit_ArrayDecl(self, node):
+        if hasattr(node, 'dim'):
+            dim = node.dim.value
+        else:
+            dim = 1
+        self.dimension_stack.append(dim)
+        level = len(self.dimension_stack)
         decls = self.collect(node)
         assert len(decls) == 1
-        self.append(Array(decls[0]))
+        self.append(Array(decls[0], self.dimension_stack))
+        self.dimension_stack = []
 
     def visit_Typedef(self, node):
         decls = self.collect(node)

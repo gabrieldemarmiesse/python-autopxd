@@ -19,6 +19,6 @@ cdef extern from "typedef_proto.test":
 
     ctypedef void (*my_func_2)(my_struct* p)
 
-    ctypedef int (*my_func_3)(char* a1, char** a2, char** a3[1][1])
+    ctypedef int (*my_func_3)(char* a1, char** a2, char** a3[3][4])
 
-    ctypedef int*** (*my_func_4)(char* a1, char** a2, char** a3[1][1])
+    ctypedef int*** (*my_func_4)(char* a1, char** a2, char** a3[3][4])

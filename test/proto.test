@@ -20,8 +20,8 @@ cdef extern from "proto.test":
 
     void my_func_2(my_struct* p)
 
-    int my_func_3(char* a1, char** a2, char** a3[1][1])
+    int my_func_3(char* a1, char** a2, char** a3[3][4])
 
-    int*** my_func_4(char* a1, char** a2, char** a3[1][1])
+    int*** my_func_4(char* a1, char** a2, char** a3[3][4])
 
     void my_func_5(char*, int)
