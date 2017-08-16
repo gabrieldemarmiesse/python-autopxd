@@ -42,6 +42,14 @@ IGNORE_DECLARATIONS = set((
     'va_list',
 ))
 
+STDINT_DECLARATIONS = set(('int8_t', 'uint8_t', 'int16_t', 'uint16_t',
+    'int32_t', 'uint32_t', 'int64_t', 'uint64_t', 'int_least8_t',
+    'uint_least8_t', 'int_least16_t', 'uint_least16_t', 'int_least32_t',
+    'uint_least32_t', 'int_least64_t', 'uint_least64_t', 'int_fast8_t',
+    'uint_fast8_t', 'int_fast16_t', 'uint_fast16_t', 'int_fast32_t',
+    'uint_fast32_t', 'int_fast64_t', 'uint_fast64_t', 'intptr_t', 'uintptr_t',
+    'intmax_t', 'uintmax_t',
+))
 
 class PxdNode(object):
     indent = '    '
@@ -165,6 +173,7 @@ class AutoPxd(c_ast.NodeVisitor, PxdNode):
         self.hdrname = hdrname
         self.decl_stack = [[]]
         self.visit_stack = []
+        self.stdint_declarations = []
         self.dimension_stack = []
 
     def visit(self, node):
@@ -175,6 +184,9 @@ class AutoPxd(c_ast.NodeVisitor, PxdNode):
         return rv
 
     def visit_IdentifierType(self, node):
+        for name in node.names:
+            if name in STDINT_DECLARATIONS and name not in self.stdint_declarations:
+                self.stdint_declarations.append(name)
         self.append(' '.join(node.names))
 
     def visit_Block(self, node, kind):
@@ -358,7 +370,11 @@ def translate(code, hdrname, extra_cpp_args=[], whitelist=None):
     extra_cpp_args += ['-I', extra_incdir]
     p = AutoPxd(hdrname)
     p.visit(parse(code, extra_cpp_args=extra_cpp_args, whitelist=whitelist))
-    return str(p)
+    pxd_string = ''
+    if p.stdint_declarations:
+        pxd_string += 'from libc.stdint cimport {:s}\n\n'.format(', '.join(p.stdint_declarations))
+    pxd_string += str(p)
+    return pxd_string
 
 
 WHITELIST = []
