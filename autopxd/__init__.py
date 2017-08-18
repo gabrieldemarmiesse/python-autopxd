@@ -177,6 +177,7 @@ class AutoPxd(c_ast.NodeVisitor, PxdNode):
         self.visit_stack = []
         self.stdint_declarations = []
         self.dimension_stack = []
+        self.constants = {}
 
     def visit(self, node):
         self.visit_stack.append(node)
@@ -219,8 +220,14 @@ class AutoPxd(c_ast.NodeVisitor, PxdNode):
     def visit_Enum(self, node):
         items = []
         if node.values:
+            value = 0
             for item in node.values.enumerators:
                 items.append(item.name)
+                if item.value is not None and hasattr(item.value, 'value'):
+                    value = int(item.value.value)
+                else:
+                    value += 1
+                self.constants[item.name] = value
         type_decl = self.child_of(c_ast.TypeDecl, -2)
         type_def = type_decl and self.child_of(c_ast.Typedef, -3)
         name = node.name
@@ -291,10 +298,12 @@ class AutoPxd(c_ast.NodeVisitor, PxdNode):
             self.append(Ptr(decls[0]))
 
     def visit_ArrayDecl(self, node):
+        dim = ''
         if hasattr(node, 'dim'):
-            dim = node.dim.value
-        else:
-            dim = 1
+            if hasattr(node.dim, 'value'):
+                dim = node.dim.value
+            elif hasattr(node.dim, 'name') and node.dim.name in self.constants:
+                dim = str(self.constants[node.dim.name])
         self.dimension_stack.append(dim)
         level = len(self.dimension_stack)
         decls = self.collect(node)
