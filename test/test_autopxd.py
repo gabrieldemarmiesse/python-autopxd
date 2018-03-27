@@ -19,9 +19,9 @@ def test_all():
 
         whitelist = None
         cpp_args = []
-        if file_path == 'test/whitelist.test':
+        if file_path == files_dir + '/whitelist.test':
             test_path = os.path.dirname(file_path)
-            whitelist = ['test/tux_foo.h']
+            whitelist = [files_dir + '/tux_foo.h']
             cpp_args = ['-I', test_path]
         actual = autopxd.translate(c, os.path.basename(file_path), cpp_args, whitelist)
         assert cython == actual

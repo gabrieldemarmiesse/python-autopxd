@@ -51,6 +51,24 @@ STDINT_DECLARATIONS = set(('int8_t', 'uint8_t', 'int16_t', 'uint16_t',
     'intmax_t', 'uintmax_t',
 ))
 
+
+def ensure_binary(s, encoding='utf-8', errors='strict'):
+    """Coerce **s** to six.binary_type.
+    For Python 2:
+      - `unicode` -> encoded to `str`
+      - `str` -> `str`
+    For Python 3:
+      - `str` -> encoded to `bytes`
+      - `bytes` -> `bytes`
+    """
+    if isinstance(s, six.text_type):
+        return s.encode(encoding, errors)
+    elif isinstance(s, six.binary_type):
+        return s
+    else:
+        raise TypeError("not expecting type '%s'" % type(s))
+
+
 class PxdNode(object):
     indent = '    '
 
@@ -363,8 +381,7 @@ def preprocess(code, extra_cpp_args=[]):
     proc = subprocess.Popen([
         'cpp', '-nostdinc', '-D__attribute__(x)=', '-I', BUILTIN_HEADERS_DIR,
     ] + extra_cpp_args + ['-'], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-    result = []
-    result.append(proc.communicate(input=code.encode('utf-8'))[0])
+    result = [proc.communicate(input=ensure_binary(code))[0]]
     while proc.poll() is None:
         result.append(proc.communicate()[0])
     if proc.returncode:
