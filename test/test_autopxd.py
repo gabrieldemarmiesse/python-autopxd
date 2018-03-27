@@ -7,7 +7,10 @@ import autopxd
 
 
 def test_all():
-    for file_path in glob.iglob('test/*.test'):
+    files_dir = os.path.join(os.path.dirname(__file__), "test_files")
+    list_to_test = list(glob.iglob(files_dir + '/*.test'))
+    print(len(list_to_test), 'files to test')
+    for file_path in list_to_test:
         with open(file_path) as f:
             data = f.read()
         c, cython = re.split('^-+$', data, maxsplit=1, flags=re.MULTILINE)

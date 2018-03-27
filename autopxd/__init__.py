@@ -406,6 +406,22 @@ def translate(code, hdrname, extra_cpp_args=[], whitelist=None):
     return pxd_string
 
 
+def translate_command_line(input_path, output_path=None, include_dir=None):
+    """ include_dir is a list of directories in which we can look."""
+
+    if output_path is None:
+        output_path = input_path[:-1] + 'pxd'
+    if include_dir is None:
+        include_dir = []
+    input_string = open(input_path, 'r').read()
+    input_filename = os.path.basename(input_path)
+    extra_args = ['-I'] + include_dir
+    output_string = translate(input_string, input_filename, extra_args)
+    open(output_path, 'a+').write(output_string)
+
+
+
+
 WHITELIST = []
 
 @click.command()
